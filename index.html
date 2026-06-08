@@ -170,6 +170,7 @@
         @media (max-width: 640px) { .tab-btn { padding: 8px 16px; font-size: 12px; } .ldp-grid { gap: 4px; } }
         .logout-btn { background: rgba(220, 38, 38, 0.8); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-left: 8px; }
         .logout-btn:hover { background: rgb(220, 38, 38); transform: scale(1.02); }
+        .match-digit-badge { display: inline-block; background: rgba(168,85,247,0.3); border-radius: 20px; padding: 4px 12px; font-size: 12px; margin-left: 8px; }
     </style>
 </head>
 <body>
@@ -203,6 +204,7 @@
                         </button>
                     </div>
                 </div>
+                <div id="userBadge" class="text-right text-[10px] text-purple-400 mt-1"></div>
             </div>
         </header>
         
@@ -277,9 +279,7 @@
 
     <script>
         // ======================= SIMPLE AUTHENTICATION =======================
-        // Admin email that can receive MATCHES signals
         const ADMIN_EMAIL = "caleborenge08@gmail.com";
-        // Any login works - no restrictions
         let currentUserEmail = null;
 
         function logoutAndClear() {
@@ -288,7 +288,6 @@
         }
 
         function login(email, password) {
-            // Any non-empty email/password works
             if (email && password) {
                 localStorage.setItem("kairon_user_email", email);
                 currentUserEmail = email;
@@ -360,23 +359,47 @@
             return null;
         }
         
-        // KEY CHANGE: Matches only for admin, Differs only for non-admin
+        // UPDATED: Clear MATCHES prediction for admin, DIFFERS for others
         function analyzeMatchesDiffers(digit) {
             if(digitsHistory.length<30) return null;
-            let lastDigit=digitsHistory[digitsHistory.length-1], matches=0,differs=0;
-            for(let i=1;i<digitsHistory.length;i++){ 
-                if(digitsHistory[i]===digitsHistory[i-1]) matches++; 
-                else differs++; 
+            
+            let matches = 0;
+            let differs = 0;
+            const lastDigit = digitsHistory[digitsHistory.length - 1];
+            
+            for(let i = 1; i < digitsHistory.length; i++) { 
+                if(digitsHistory[i] === digitsHistory[i-1]) {
+                    matches++;
+                } else {
+                    differs++;
+                }
             }
-            let matchesPct=(matches/(digitsHistory.length-1))*100, differsPct=(differs/(digitsHistory.length-1))*100;
+            
+            const total = digitsHistory.length - 1;
+            const matchesPct = (matches / total) * 100;
+            const differsPct = (differs / total) * 100;
             
             if (isAdminUser()) {
-                // Admin can get MATCHES signals only (no DIFFERS)
-                if(matchesPct>=70) return { signal:"MATCHES", confidence:matchesPct, type:"matches", lastDigit:lastDigit };
+                // ADMIN: Only MATCHES signals - predicts NEXT tick will have SAME digit as current
+                if(matchesPct >= 68) {
+                    return { 
+                        signal: "MATCHES", 
+                        confidence: Math.round(matchesPct), 
+                        type: "matches", 
+                        lastDigit: lastDigit  // This digit will REPEAT on next tick
+                    };
+                }
                 return null;
             } else {
-                // Non-admin users get DIFFERS signals only (no MATCHES)
-                if(differsPct>=70) return { signal:"DIFFERS", confidence:differsPct, type:"differs", lastDigit:lastDigit };
+                // Non-admin: Only DIFFERS signals - predicts NEXT tick will have DIFFERENT digit
+                if(differsPct >= 68) {
+                    return { 
+                        signal: "DIFFERS", 
+                        confidence: Math.round(differsPct), 
+                        type: "differs", 
+                        lastDigit: lastDigit  // Reference digit (current digit that will change)
+                    };
+                }
                 return null;
             }
         }
@@ -413,7 +436,11 @@
                 const icon = isBullish ? 'fa-arrow-up' : 'fa-arrow-down';
                 let largeHtml = '';
                 if(currentTradeType === 'matches_differs' && extra?.digit!==undefined){
-                    largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-2 border-2 border-purple-500"><p class="text-xs text-purple-300 font-semibold">REFERENCE DIGIT</p><div class="text-7xl md:text-8xl font-black text-white">${extra.digit}</div><p class="text-[10px] text-gray-400">${signal==='MATCHES'?'NEXT TICK MATCHES':'NEXT TICK DIFFERS'}</p></div></div>`;
+                    if(signal === 'MATCHES') {
+                        largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-purple-900 to-purple-700 rounded-2xl p-3 border-2 border-purple-400 shadow-2xl"><p class="text-xs text-purple-300 font-semibold tracking-wider">🎯 MATCH PREDICTION</p><div class="text-8xl md:text-9xl font-black text-white drop-shadow-lg my-2">${extra.digit}</div><p class="text-sm text-purple-200">NEXT TICK WILL MATCH: <span class="text-2xl font-bold">${extra.digit}</span></p><p class="text-[10px] text-gray-300 mt-1">Same digit will repeat</p></div></div>`;
+                    } else {
+                        largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-blue-900 to-blue-700 rounded-2xl p-3 border-2 border-blue-400 shadow-2xl"><p class="text-xs text-blue-300 font-semibold tracking-wider">🔄 DIFFERS PREDICTION</p><div class="text-6xl md:text-7xl font-black text-white drop-shadow-lg my-2">≠ ${extra.digit}</div><p class="text-sm text-blue-200">NEXT TICK WILL BE DIFFERENT FROM <span class="text-xl font-bold">${extra.digit}</span></p><p class="text-[10px] text-gray-300 mt-1">Digit will change</p></div></div>`;
+                    }
                 } else if(currentTradeType === 'even_odd' && (signal === 'EVEN' || signal === 'ODD')){
                     largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-2 border-2 border-yellow-500 shadow-2xl"><p class="text-xs text-yellow-300 font-semibold tracking-wider">PREDICTION</p><div class="text-7xl md:text-8xl font-black text-white drop-shadow-lg">${signal}</div><p class="text-[10px] text-gray-400 mt-1">HIGH CONFIDENCE ${Math.round(confidence)}%</p></div></div>`;
                 }
@@ -447,7 +474,31 @@
             return false;
         }
         
-        function updateUI() { let total=digitsHistory.length||1; let digitsData=Array(10).fill(0); digitsHistory.forEach(d=>{if(d>=0&&d<=9) digitsData[d]++;}); document.getElementById('dominantDigit').innerText=digitsData.indexOf(Math.max(...digitsData)); let statsDiv=document.getElementById('digitsStats'); if(statsDiv) statsDiv.innerHTML=digitsData.map((c,i)=>`<div class="flex justify-between items-center text-xs"><span class="w-5 font-bold" style="color:${getDigitColor(i)}">${i}</span><div class="flex-1 mx-2 bg-gray-700 rounded-full h-2"><div class="h-2 rounded-full" style="width:${(c/total)*100}%; background:${getDigitColor(i)}"></div></div><span>${c}</span><span class="text-gray-400">${((c/total)*100).toFixed(1)}%</span></div>`).join(''); if(priceData.length){ let lp=priceData[priceData.length-1]; document.getElementById('lastPrice').innerText=lp.toFixed(4); document.getElementById('highPrice').innerText=Math.max(...priceData).toFixed(4); document.getElementById('lowPrice').innerText=Math.min(...priceData).toFixed(4); let ch=((lp-priceData[priceData.length-2])/priceData[priceData.length-2]*100); document.getElementById('priceChange').innerHTML=`${ch>=0?'+':''}${ch.toFixed(2)}%`; document.getElementById('priceChange').className=`font-bold ${ch>=0?'text-green-400':'text-red-400'}`; } let ldpDiv=document.getElementById('ldpGrid'); let last20=[...digitsHistory].slice(-20).reverse(); if(ldpDiv) ldpDiv.innerHTML=last20.map(d=>`<div class="ldp-digit ldp-digit-${d} text-center">${d}</div>`).join(''); document.getElementById('currentLastDigit').innerHTML=last20.length?last20[0]:'---'; for(let i=2;i<=9;i++){ let cnt=digitsHistory.filter(d=>d>i).length; let pct=(cnt/total)*100; if(document.getElementById(`over${i}Percent`)) document.getElementById(`over${i}Percent`).innerText=`${pct.toFixed(1)}%`; } for(let i=1;i<=8;i++){ let cnt=digitsHistory.filter(d=>d<i).length; let pct=(cnt/total)*100; if(document.getElementById(`under${i}Percent`)) document.getElementById(`under${i}Percent`).innerText=`${pct.toFixed(1)}%`; } if(digitsChart){ digitsChart.data.datasets[0].data=digitsData; digitsChart.update(); } }
+        function updateUI() { 
+            let total=digitsHistory.length||1; 
+            let digitsData=Array(10).fill(0); 
+            digitsHistory.forEach(d=>{if(d>=0&&d<=9) digitsData[d]++;}); 
+            document.getElementById('dominantDigit').innerText=digitsData.indexOf(Math.max(...digitsData)); 
+            let statsDiv=document.getElementById('digitsStats'); 
+            if(statsDiv) statsDiv.innerHTML=digitsData.map((c,i)=>`<div class="flex justify-between items-center text-xs"><span class="w-5 font-bold" style="color:${getDigitColor(i)}">${i}</span><div class="flex-1 mx-2 bg-gray-700 rounded-full h-2"><div class="h-2 rounded-full" style="width:${(c/total)*100}%; background:${getDigitColor(i)}"></div></div><span>${c}</span><span class="text-gray-400">${((c/total)*100).toFixed(1)}%</span></div>`).join(''); 
+            if(priceData.length){ let lp=priceData[priceData.length-1]; document.getElementById('lastPrice').innerText=lp.toFixed(4); document.getElementById('highPrice').innerText=Math.max(...priceData).toFixed(4); document.getElementById('lowPrice').innerText=Math.min(...priceData).toFixed(4); let ch=((lp-priceData[priceData.length-2])/priceData[priceData.length-2]*100); document.getElementById('priceChange').innerHTML=`${ch>=0?'+':''}${ch.toFixed(2)}%`; document.getElementById('priceChange').className=`font-bold ${ch>=0?'text-green-400':'text-red-400'}`; } 
+            let ldpDiv=document.getElementById('ldpGrid'); let last20=[...digitsHistory].slice(-20).reverse(); if(ldpDiv) ldpDiv.innerHTML=last20.map(d=>`<div class="ldp-digit ldp-digit-${d} text-center">${d}</div>`).join(''); 
+            document.getElementById('currentLastDigit').innerHTML=last20.length?last20[0]:'---'; 
+            for(let i=2;i<=9;i++){ let cnt=digitsHistory.filter(d=>d>i).length; let pct=(cnt/total)*100; if(document.getElementById(`over${i}Percent`)) document.getElementById(`over${i}Percent`).innerText=`${pct.toFixed(1)}%`; } 
+            for(let i=1;i<=8;i++){ let cnt=digitsHistory.filter(d=>d<i).length; let pct=(cnt/total)*100; if(document.getElementById(`under${i}Percent`)) document.getElementById(`under${i}Percent`).innerText=`${pct.toFixed(1)}%`; } 
+            if(digitsChart){ digitsChart.data.datasets[0].data=digitsData; digitsChart.update(); } 
+            
+            // Update user badge
+            const badge = document.getElementById('userBadge');
+            if(badge && currentUserEmail) {
+                if(isAdminUser()) {
+                    badge.innerHTML = `<i class="fas fa-crown text-yellow-400 mr-1"></i>Admin Mode: MATCHES signals enabled`;
+                } else {
+                    badge.innerHTML = `<i class="fas fa-user text-blue-400 mr-1"></i>User Mode: DIFFERS signals only`;
+                }
+            }
+        }
+        
         function handleNewTick(tick){ let price=parseFloat(tick.quote); if(isNaN(price)) return; if(tick.subscription&&!currentSubscriptionId) currentSubscriptionId=tick.subscription.id; priceData.push(price); digitsHistory.push(getDigitFromPrice(price)); if(priceData.length>1000){ priceData=priceData.slice(-1000); digitsHistory=digitsHistory.slice(-1000); } MARKET_DATA[currentMarket]={priceData:[...priceData],digitsHistory:[...digitsHistory]}; updateUI(); if(priceChart){ priceChart.data.datasets[0].data=priceData.slice(-100); priceChart.update(); } if(canAnalyze && digitsHistory.length>=30) analyzeSignals(price, digitsHistory[digitsHistory.length-1]); }
         function connectDeriv(){ if(ws) ws.close(); ws=new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089"); ws.onopen=()=>{ getTickHistory(currentMarket); subscribeToMarket(currentMarket); setInterval(()=>{ if(ws && ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({ping:1})); },30000); }; ws.onmessage=(e)=>{ let data=JSON.parse(e.data); if(data.pong) return; if(data.tick) handleNewTick(data.tick); if(data.history && data.history.prices) { let prices=data.history.prices.map(p=>parseFloat(p)); priceData=prices; digitsHistory=prices.map(p=>getDigitFromPrice(p)); updateUI(); if(priceChart){ priceChart.data.datasets[0].data=priceData.slice(-100); priceChart.update(); } } }; ws.onclose=()=>setTimeout(connectDeriv,5000); }
         function subscribeToMarket(sym){ if(ws?.readyState===WebSocket.OPEN){ if(currentSubscriptionId) ws.send(JSON.stringify({forget:currentSubscriptionId, req_id:Date.now()})); ws.send(JSON.stringify({ticks:sym,subscribe:1,req_id:Date.now()})); } }
@@ -507,7 +558,7 @@
         }
         
         function startTradingApp(){
-            initMarketDropdown(); initCharts(); connectDeriv(); initTabs(); initMT5Form(); loadNewsData();
+            initMarketDropdown(); initCharts(); connectDeriv(); initTabs(); initMT5Form(); loadNewsData(); updateUI();
             document.getElementById('floatingAnalyseBtn')?.addEventListener('click',resetAnalysis);
             document.getElementById('manualAnalysisBtn')?.addEventListener('click',()=>{ if(priceData.length && digitsHistory.length>=30) analyzeSignals(priceData[priceData.length-1], digitsHistory[digitsHistory.length-1]); else speak("Not enough data yet."); });
             document.querySelectorAll('.trade-type-btn').forEach(btn=>{ btn.addEventListener('click',(e)=>{ let type=btn.dataset.type; document.querySelectorAll('.trade-type-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentTradeType=type; canAnalyze=true; speak(`Switched to ${type.replace('_',' ')} analysis.`); }); });
