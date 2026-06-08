@@ -337,7 +337,7 @@
         // ======================= APP CORE =======================
         const MARKET_NAMES = { 'R_10': 'Volatility 10 Index','R_25':'Volatility 25 Index','R_50':'Volatility 50 Index','R_75':'Volatility 75 Index','R_100':'Volatility 100 Index','1HZ10V':'Volatility 10 (1s)','1HZ25V':'Volatility 25 (1s)','1HZ50V':'Volatility 50 (1s)','1HZ75V':'Volatility 75 (1s)','1HZ100V':'Volatility 100 (1s)' };
         const ALL_MARKETS = Object.keys(MARKET_NAMES);
-        let ws = null, currentMarket = 'R_100', currentTradeType = 'rise_fall', digitsHistory = [], priceData = [], signalHistory = [], voiceEnabled = true, lastVoiceTime = 0, canAnalyze = true, priceChart = null, digitsChart = null, currentSubscriptionId = null;
+        let ws = null, currentMarket = 'R_100', currentTradeType = 'matches_differs', digitsHistory = [], priceData = [], signalHistory = [], voiceEnabled = true, lastVoiceTime = 0, canAnalyze = true, priceChart = null, digitsChart = null, currentSubscriptionId = null;
         const MARKET_DATA = {};
         ALL_MARKETS.forEach(m => { MARKET_DATA[m] = { digitsHistory: [], priceData: [] }; });
 
@@ -350,24 +350,24 @@
         function calculateRSI(prices) { let gains=0,losses=0; for(let i=1;i<Math.min(prices.length,15);i++){ let ch=prices[i]-prices[i-1]; if(ch>=0) gains+=ch; else losses-=ch; } let avgGain=gains/14, avgLoss=losses/14, rs=avgLoss===0?100:avgGain/avgLoss; return 100-(100/(1+rs)); }
         
         function analyzeEvenOdd(digit) {
-            if(digitsHistory.length<30) return null;
+            if(digitsHistory.length<20) return null;
             let evenCount=digitsHistory.filter(d=>d%2===0).length, oddCount=digitsHistory.length-evenCount;
             let evenPct=(evenCount/digitsHistory.length)*100, oddPct=(oddCount/digitsHistory.length)*100;
-            if(evenPct>=65) return { signal:"EVEN", confidence:evenPct, type:"even" };
-            if(oddPct>=65) return { signal:"ODD", confidence:oddPct, type:"odd" };
+            if(evenPct>=60) return { signal:"EVEN", confidence:evenPct, type:"even" };
+            if(oddPct>=60) return { signal:"ODD", confidence:oddPct, type:"odd" };
             return null;
         }
         
-        // FIXED: More sensitive MATCHES detection for admin
+        // FIXED: Immediate MATCHES detection for admin
         function analyzeMatchesDiffers(digit) {
-            if(digitsHistory.length<20) return null;
+            if(digitsHistory.length<15) return null;
             
             let matches = 0;
             let differs = 0;
             const lastDigit = digitsHistory[digitsHistory.length - 1];
             
-            // Analyze last 20 ticks for pattern
-            const startIdx = Math.max(0, digitsHistory.length - 21);
+            // Analyze recent pattern (last 15-20 ticks)
+            const startIdx = Math.max(0, digitsHistory.length - 20);
             for(let i = startIdx + 1; i < digitsHistory.length; i++) { 
                 if(digitsHistory[i] === digitsHistory[i-1]) {
                     matches++;
@@ -381,9 +381,9 @@
             const differsPct = (differs / total) * 100;
             
             if (isAdminUser()) {
-                // ADMIN: MATCHES signals when pattern shows repeats
-                // Lowered threshold to 55% for more signals
-                if(matchesPct >= 55) {
+                // ADMIN: MATCHES signals - predicts SAME digit repeats
+                // Lower threshold to 50% for more immediate signals
+                if(matchesPct >= 50 && matches > 0) {
                     return { 
                         signal: "MATCHES", 
                         confidence: Math.round(matchesPct), 
@@ -391,10 +391,19 @@
                         lastDigit: lastDigit
                     };
                 }
+                // If no strong matches pattern, still sometimes predict based on recent streak
+                if(digitsHistory.length >= 3 && digitsHistory[digitsHistory.length-1] === digitsHistory[digitsHistory.length-2]) {
+                    return {
+                        signal: "MATCHES",
+                        confidence: 65,
+                        type: "matches",
+                        lastDigit: lastDigit
+                    };
+                }
                 return null;
             } else {
                 // Non-admin: DIFFERS signals
-                if(differsPct >= 55) {
+                if(differsPct >= 50) {
                     return { 
                         signal: "DIFFERS", 
                         confidence: Math.round(differsPct), 
@@ -407,7 +416,7 @@
         }
         
         function analyzeRiseFall(price) {
-            if(priceData.length<30) return null;
+            if(priceData.length<20) return null;
             let prices=priceData.slice(-20), gains=0,losses=0;
             for(let i=1;i<prices.length;i++){ let ch=prices[i]-prices[i-1]; if(ch>=0) gains+=ch; else losses-=ch; }
             let avgGain=gains/14, avgLoss=losses/14, rs=avgLoss===0?100:avgGain/avgLoss, rsi=100-(100/(1+rs));
@@ -415,17 +424,17 @@
             if(rsi<30){ signal="RISE"; confidence=75+(30-rsi); if(macd<0) confidence+=10; }
             else if(rsi>70){ signal="FALL"; confidence=75+(rsi-70); if(macd>0) confidence+=10; }
             confidence=Math.min(95,Math.max(50,confidence));
-            if(signal && confidence>68) return { signal, confidence:Math.round(confidence), reasons:[`RSI: ${rsi.toFixed(1)}`] };
+            if(signal && confidence>65) return { signal, confidence:Math.round(confidence), reasons:[`RSI: ${rsi.toFixed(1)}`] };
             return null;
         }
         function analyzeOverUnder(digit) {
-            if(digitsHistory.length<30) return null;
+            if(digitsHistory.length<20) return null;
             let overThresh=[2,3,4,5,6,7,8,9], bestOver=null,bestOverPct=0;
-            for(let t of overThresh){ let overCount=digitsHistory.filter(d=>d>t).length, pct=(overCount/digitsHistory.length)*100; if(pct>bestOverPct && pct>=60){ bestOverPct=pct; bestOver=t; } }
+            for(let t of overThresh){ let overCount=digitsHistory.filter(d=>d>t).length, pct=(overCount/digitsHistory.length)*100; if(pct>bestOverPct && pct>=55){ bestOverPct=pct; bestOver=t; } }
             let underThresh=[1,2,3,4,5,6,7,8], bestUnder=null,bestUnderPct=0;
-            for(let t of underThresh){ let underCount=digitsHistory.filter(d=>d<t).length, pct=(underCount/digitsHistory.length)*100; if(pct>bestUnderPct && pct>=60){ bestUnderPct=pct; bestUnder=t; } }
-            if(bestOver!==null && bestOverPct>=65){ let prediction=digit>bestOver?"OVER":"UNDER"; return { signal:`${prediction} ${bestOver}`, confidence:bestOverPct, type:"over" }; }
-            if(bestUnder!==null && bestUnderPct>=65){ let prediction=digit<bestUnder?"UNDER":"OVER"; return { signal:`${prediction} ${bestUnder}`, confidence:bestUnderPct, type:"under" }; }
+            for(let t of underThresh){ let underCount=digitsHistory.filter(d=>d<t).length, pct=(underCount/digitsHistory.length)*100; if(pct>bestUnderPct && pct>=55){ bestUnderPct=pct; bestUnder=t; } }
+            if(bestOver!==null && bestOverPct>=60){ let prediction=digit>bestOver?"OVER":"UNDER"; return { signal:`${prediction} ${bestOver}`, confidence:bestOverPct, type:"over" }; }
+            if(bestUnder!==null && bestUnderPct>=60){ let prediction=digit<bestUnder?"UNDER":"OVER"; return { signal:`${prediction} ${bestUnder}`, confidence:bestUnderPct, type:"under" }; }
             return null;
         }
         
@@ -466,12 +475,13 @@
             else if(currentTradeType==='matches_differs') result=analyzeMatchesDiffers(digit);
             else if(currentTradeType==='rise_fall') result=analyzeRiseFall(price);
             
-            if(result && result.confidence>=55){
+            if(result && result.confidence>=50){
                 let extraData=null;
                 if(currentTradeType==='matches_differs' && result.lastDigit!==undefined) extraData={ digit:result.lastDigit, type:result.type };
                 generateSignal(result.signal, result.confidence, result.reasons || [], extraData);
-                canAnalyze=false;
-                setTimeout(() => { canAnalyze = true; }, 3000);
+                canAnalyze = false;
+                // Reset after 2 seconds to allow new signals on next ticks
+                setTimeout(() => { canAnalyze = true; }, 2000);
                 return true;
             }
             return false;
@@ -501,11 +511,25 @@
             }
         }
         
-        function handleNewTick(tick){ let price=parseFloat(tick.quote); if(isNaN(price)) return; if(tick.subscription&&!currentSubscriptionId) currentSubscriptionId=tick.subscription.id; priceData.push(price); digitsHistory.push(getDigitFromPrice(price)); if(priceData.length>1000){ priceData=priceData.slice(-1000); digitsHistory=digitsHistory.slice(-1000); } MARKET_DATA[currentMarket]={priceData:[...priceData],digitsHistory:[...digitsHistory]}; updateUI(); if(priceChart){ priceChart.data.datasets[0].data=priceData.slice(-100); priceChart.update(); } if(canAnalyze && digitsHistory.length>=20) analyzeSignals(price, digitsHistory[digitsHistory.length-1]); }
+        function forceAnalysis() {
+            if(priceData.length && digitsHistory.length >= 15) {
+                canAnalyze = true;
+                analyzeSignals(priceData[priceData.length-1], digitsHistory[digitsHistory.length-1]);
+            } else {
+                speak("Not enough data yet. Waiting for more ticks...");
+                setTimeout(() => {
+                    if(priceData.length && digitsHistory.length >= 15) {
+                        analyzeSignals(priceData[priceData.length-1], digitsHistory[digitsHistory.length-1]);
+                    }
+                }, 3000);
+            }
+        }
+        
+        function handleNewTick(tick){ let price=parseFloat(tick.quote); if(isNaN(price)) return; if(tick.subscription&&!currentSubscriptionId) currentSubscriptionId=tick.subscription.id; priceData.push(price); digitsHistory.push(getDigitFromPrice(price)); if(priceData.length>1000){ priceData=priceData.slice(-1000); digitsHistory=digitsHistory.slice(-1000); } MARKET_DATA[currentMarket]={priceData:[...priceData],digitsHistory:[...digitsHistory]}; updateUI(); if(priceChart){ priceChart.data.datasets[0].data=priceData.slice(-100); priceChart.update(); } if(canAnalyze && digitsHistory.length>=15) analyzeSignals(price, digitsHistory[digitsHistory.length-1]); }
         function connectDeriv(){ if(ws) ws.close(); ws=new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089"); ws.onopen=()=>{ getTickHistory(currentMarket); subscribeToMarket(currentMarket); setInterval(()=>{ if(ws && ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({ping:1})); },30000); }; ws.onmessage=(e)=>{ let data=JSON.parse(e.data); if(data.pong) return; if(data.tick) handleNewTick(data.tick); if(data.history && data.history.prices) { let prices=data.history.prices.map(p=>parseFloat(p)); priceData=prices; digitsHistory=prices.map(p=>getDigitFromPrice(p)); updateUI(); if(priceChart){ priceChart.data.datasets[0].data=priceData.slice(-100); priceChart.update(); } } }; ws.onclose=()=>setTimeout(connectDeriv,5000); }
         function subscribeToMarket(sym){ if(ws?.readyState===WebSocket.OPEN){ if(currentSubscriptionId) ws.send(JSON.stringify({forget:currentSubscriptionId, req_id:Date.now()})); ws.send(JSON.stringify({ticks:sym,subscribe:1,req_id:Date.now()})); } }
         function getTickHistory(sym){ let cnt=parseInt(document.getElementById("tickSelector")?.value||"1000"); if(ws?.readyState===WebSocket.OPEN) ws.send(JSON.stringify({ticks_history:sym,adjust_start_time:1,count:cnt,end:"latest",style:"ticks",req_id:Date.now()})); }
-        function resetAnalysis(){ canAnalyze=true; document.getElementById('floatingAnalyseBtn').style.transform='scale(1.1)'; setTimeout(()=>document.getElementById('floatingAnalyseBtn').style.transform='',300); speak("KAIRON quantum analysis activated."); if(digitsHistory.length>=20) analyzeSignals(priceData[priceData.length-1], digitsHistory[digitsHistory.length-1]); }
+        function resetAnalysis(){ canAnalyze=true; document.getElementById('floatingAnalyseBtn').style.transform='scale(1.1)'; setTimeout(()=>document.getElementById('floatingAnalyseBtn').style.transform='',300); speak("KAIRON quantum analysis activated."); forceAnalysis(); }
         function initMarketDropdown(){ let content=document.getElementById('marketDropdownContent'); if(content){ content.innerHTML=ALL_MARKETS.map(m=>`<div class="market-dropdown-item ${currentMarket===m?'active':''}" data-market="${m}"><i class="fas fa-chart-line mr-2"></i>${MARKET_NAMES[m]}</div>`).join(''); document.querySelectorAll('.market-dropdown-item').forEach(el=>el.addEventListener('click',()=>{ let m=el.dataset.market; currentMarket=m; document.getElementById('selectedMarketText').innerText=MARKET_NAMES[m]; if(MARKET_DATA[m]?.priceData){ priceData=[...MARKET_DATA[m].priceData]; digitsHistory=[...MARKET_DATA[m].digitsHistory]; updateUI(); priceChart.data.datasets[0].data=priceData.slice(-100); priceChart.update(); } else getTickHistory(m); subscribeToMarket(m); canAnalyze=true; })); }
             document.getElementById('marketDropdownBtn')?.addEventListener('click',(e)=>{ e.stopPropagation(); content.classList.toggle('show'); });
             document.addEventListener('click',()=>content?.classList.remove('show'));
@@ -560,14 +584,24 @@
         }
         
         function startTradingApp(){
+            // Set default to matches_differs for admin
+            if(isAdminUser()) {
+                currentTradeType = 'matches_differs';
+                document.querySelectorAll('.trade-type-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if(btn.dataset.type === 'matches_differs') btn.classList.add('active');
+                });
+            }
             initMarketDropdown(); initCharts(); connectDeriv(); initTabs(); initMT5Form(); loadNewsData(); updateUI();
             document.getElementById('floatingAnalyseBtn')?.addEventListener('click',resetAnalysis);
-            document.getElementById('manualAnalysisBtn')?.addEventListener('click',()=>{ if(priceData.length && digitsHistory.length>=20) analyzeSignals(priceData[priceData.length-1], digitsHistory[digitsHistory.length-1]); else speak("Not enough data yet."); });
-            document.querySelectorAll('.trade-type-btn').forEach(btn=>{ btn.addEventListener('click',(e)=>{ let type=btn.dataset.type; document.querySelectorAll('.trade-type-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentTradeType=type; canAnalyze=true; speak(`Switched to ${type.replace('_',' ')} analysis.`); }); });
+            document.getElementById('manualAnalysisBtn')?.addEventListener('click',()=>{ forceAnalysis(); });
+            document.querySelectorAll('.trade-type-btn').forEach(btn=>{ btn.addEventListener('click',(e)=>{ let type=btn.dataset.type; document.querySelectorAll('.trade-type-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentTradeType=type; canAnalyze=true; speak(`Switched to ${type.replace('_',' ')} analysis.`); if(type === 'matches_differs') forceAnalysis(); }); });
             document.getElementById('voiceToggleBtn')?.addEventListener('click',()=>{ voiceEnabled=!voiceEnabled; document.getElementById('voiceToggleBtn').innerHTML=voiceEnabled?'<i class="fas fa-volume-up"></i>':'<i class="fas fa-volume-mute"></i>'; if(voiceEnabled) speak("Voice alerts enabled."); });
             document.getElementById('refreshDataBtn')?.addEventListener('click',()=>getTickHistory(currentMarket));
             document.getElementById('logoutBtn')?.addEventListener('click', logoutAndClear);
-            speak("KAIRON systems operational. Press analyse market to begin.");
+            speak("KAIRON systems operational. Press ANALYSE MARKET for immediate signal.");
+            // Auto-run analysis after data loads
+            setTimeout(() => { if(digitsHistory.length >= 15) forceAnalysis(); }, 2000);
         }
         window.addEventListener("beforeunload",()=>{ if(ws) ws.close(); });
     </script>
