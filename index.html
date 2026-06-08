@@ -172,6 +172,8 @@
         .remaining-time-badge { background: #1e293b; border-radius: 20px; padding: 2px 10px; font-size: 11px; color: #fbbf24; margin-left: 10px; }
         .logout-btn { background: rgba(220, 38, 38, 0.8); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-left: 8px; }
         .logout-btn:hover { background: rgb(220, 38, 38); transform: scale(1.02); }
+        .matches-access-badge { background: rgba(102,126,234,0.3); border-radius: 20px; padding: 2px 10px; font-size: 10px; margin-left: 8px; }
+        .matches-access-badge.granted { background: rgba(34,197,94,0.3); color: #4ade80; }
     </style>
 </head>
 <body>
@@ -206,6 +208,7 @@
                     </div>
                 </div>
                 <div id="restrictedTimerDisplay" class="text-right text-[10px] text-amber-400 mt-1 hidden"></div>
+                <div id="matchesAccessBadge" class="text-right text-[10px] mt-1 hidden"></div>
             </div>
         </header>
         
@@ -340,31 +343,62 @@
             window.location.reload();
         }
 
+        function updateMatchesBadge() {
+            const badge = document.getElementById('matchesAccessBadge');
+            if (badge && currentUserRole === 'restricted') {
+                if (matchesAccessGranted) {
+                    badge.classList.remove('hidden');
+                    badge.innerHTML = `<i class="fas fa-check-circle text-green-400 mr-1"></i>Matches/Differs: <span class="text-green-400">UNLOCKED</span>`;
+                } else {
+                    badge.classList.remove('hidden');
+                    badge.innerHTML = `<i class="fas fa-lock text-yellow-400 mr-1"></i>Matches/Differs: <span class="text-yellow-400">LOCKED - Click to unlock</span>`;
+                    badge.style.cursor = 'pointer';
+                    badge.onclick = () => showSessionCodeModal((granted) => { if(granted) updateMatchesBadge(); });
+                }
+            } else if (badge) {
+                badge.classList.add('hidden');
+            }
+        }
+
         function showSessionCodeModal(callback) {
             const overlay = document.createElement('div');
             overlay.className = 'session-code-overlay';
             overlay.innerHTML = `
                 <div class="session-code-modal">
                     <h2><i class="fas fa-lock"></i> SESSION CODE REQUIRED</h2>
-                    <p class="text-xs text-gray-400 text-center mb-4">TOO MANY REQUESTS AT THE MOMENT<br>Enter session code to access MATCHES/DIFFERS analysis</p>
-                    <input type="text" id="sessionCodeInput" placeholder="Enter 8-digit code">
-                    <button id="submitSessionCode">VERIFY ACCESS</button>
+                    <p class="text-xs text-gray-400 text-center mb-4">Enter session code to unlock MATCHES/DIFFERS analysis</p>
+                    <input type="text" id="sessionCodeInput" placeholder="Enter 8-digit code" autocomplete="off">
+                    <button id="submitSessionCode">UNLOCK ACCESS</button>
                     <div id="sessionCodeError" class="error-message"></div>
                 </div>
             `;
             document.body.appendChild(overlay);
+            const input = document.getElementById('sessionCodeInput');
+            input.focus();
             document.getElementById('submitSessionCode').onclick = () => {
                 const code = document.getElementById('sessionCodeInput').value;
                 if (code === MATCHES_SESSION_CODE) {
                     matchesAccessGranted = true;
                     sessionStorage.setItem("matches_code_granted", "true");
                     overlay.remove();
+                    updateMatchesBadge();
                     if (callback) callback(true);
+                    speak("Matches and Differs analysis unlocked.");
+                    // Auto-switch to matches/differs if user wants
+                    const matchesBtn = document.querySelector('.trade-type-btn[data-type="matches_differs"]');
+                    if (matchesBtn && currentTradeType !== 'matches_differs') {
+                        document.querySelectorAll('.trade-type-btn').forEach(b=>b.classList.remove('active'));
+                        matchesBtn.classList.add('active');
+                        currentTradeType = 'matches_differs';
+                        canAnalyze = true;
+                        speak("Switched to Matches and Differs analysis.");
+                    }
                 } else {
                     document.getElementById('sessionCodeError').textContent = "❌ Invalid session code. Access denied.";
                     setTimeout(() => { overlay.remove(); if (callback) callback(false); }, 1500);
                 }
             };
+            input.addEventListener('keypress', (e) => { if(e.key === 'Enter') document.getElementById('submitSessionCode').click(); });
         }
 
         function checkMatchesAccess(callback) {
@@ -432,8 +466,7 @@
                 localStorage.setItem("kairon_current_role", "restricted");
                 currentUserRole = "restricted";
                 startRestrictedSession();
-                matchesAccessGranted = false;
-                sessionStorage.removeItem("matches_code_granted");
+                matchesAccessGranted = sessionStorage.getItem("matches_code_granted") === "true";
                 return { success: true, role: "restricted" };
             }
             return { success: false, message: "Invalid email or password" };
@@ -444,6 +477,7 @@
             if (savedRole === 'admin') {
                 if (validateAdminSession()) {
                     currentUserRole = 'admin';
+                    matchesAccessGranted = true;
                     setTimeout(() => { document.getElementById('loader').style.opacity='0'; setTimeout(()=>{document.getElementById('loader').style.display='none'; document.getElementById('mainContent').style.display='block'; startTradingApp();},500); }, 1500);
                     return;
                 } else { localStorage.removeItem("kairon_current_role"); showLoginModal(); return; }
@@ -558,16 +592,20 @@
         function analyzeSignals(price, digit) {
             if(!canAnalyze) return false;
             if (currentUserRole === 'restricted' && !isRestrictedSessionValid()) { alert("Daily session expired. Cooling mode active."); logoutAndClear(); return false; }
-            if(currentTradeType==='matches_differs') {
-                let accessAllowed = false;
-                checkMatchesAccess((granted) => { accessAllowed = granted; });
-                if(!accessAllowed) { document.getElementById('currentSignal').innerHTML='<div class="text-red-400 text-center p-2"><i class="fas fa-lock"></i> Access Denied: Session code required for Matches/Differs</div>'; return false; }
-            }
+            
             let result=null;
             if(currentTradeType==='over_under') result=analyzeOverUnder(digit);
             else if(currentTradeType==='even_odd') result=analyzeEvenOdd(digit);
-            else if(currentTradeType==='matches_differs') result=analyzeMatchesDiffers(digit);
+            else if(currentTradeType==='matches_differs') {
+                if (!matchesAccessGranted && currentUserRole !== 'admin') {
+                    showSessionCodeModal(() => {});
+                    document.getElementById('currentSignal').innerHTML='<div class="text-yellow-400 text-center p-2"><i class="fas fa-lock"></i> 🔒 Access Locked: Enter session code to unlock Matches/Differs</div>';
+                    return false;
+                }
+                result=analyzeMatchesDiffers(digit);
+            }
             else if(currentTradeType==='rise_fall') result=analyzeRiseFall(price);
+            
             if(result && result.confidence>=68){
                 let extraData=null;
                 if(currentTradeType==='matches_differs' && result.lastDigit!==undefined) extraData={ digit:result.lastDigit, type:result.type };
@@ -611,13 +649,11 @@
             const econDiv = document.getElementById('economicCalendar');
             const commDiv = document.getElementById('commodities');
             if(newsDiv && newsDiv.innerHTML.includes('animate-pulse')) {
-                newsDiv.innerHTML = `<div class="p-3 bg-gray-800/40 rounded-lg text-center text-gray-400 text-xs"><i class="fas fa-newspaper mr-2"></i>Market news feed ready. Stay tuned for updates.</div>`;
+                newsDiv.innerHTML = `<div class="p-3 bg-gray-800/40 rounded-lg text-center text-gray-400 text-xs"><i class="fas fa-newspaper mr-2"></i>Market news feed ready.</div>`;
                 econDiv.innerHTML = `<div class="p-2 bg-gray-800/30 rounded text-xs text-center">📅 No major events scheduled.</div>`;
-                commDiv.innerHTML = `<div class="p-2 bg-gray-800/30 rounded text-xs text-center">📊 Loading market data...</div>`;
+                commDiv.innerHTML = `<div class="p-2 bg-gray-800/30 rounded text-xs text-center">📊 Loading...</div>`;
                 setTimeout(() => {
-                    commDiv.innerHTML = `<div class="flex justify-between p-2 bg-gray-800/30 rounded text-xs"><span>🪙 Gold (XAU/USD)</span><span class="text-green-400">+0.3%</span><span>$2,034.20</span></div>
-                                        <div class="flex justify-between p-2 bg-gray-800/30 rounded text-xs"><span>🛢️ Crude Oil</span><span class="text-red-400">-0.7%</span><span>$77.85</span></div>
-                                        <div class="flex justify-between p-2 bg-gray-800/30 rounded text-xs"><span>₿ Bitcoin</span><span class="text-green-400">+1.2%</span><span>$61,850</span></div>`;
+                    commDiv.innerHTML = `<div class="flex justify-between p-2 bg-gray-800/30 rounded text-xs"><span>🪙 Gold</span><span class="text-green-400">+0.3%</span><span>$2,034</span></div><div class="flex justify-between p-2 bg-gray-800/30 rounded text-xs"><span>🛢️ Oil</span><span class="text-red-400">-0.7%</span><span>$77.85</span></div><div class="flex justify-between p-2 bg-gray-800/30 rounded text-xs"><span>₿ Bitcoin</span><span class="text-green-400">+1.2%</span><span>$61,850</span></div>`;
                 }, 500);
             }
         }
@@ -640,10 +676,10 @@
         }
         
         function startTradingApp(){
-            initMarketDropdown(); initCharts(); connectDeriv(); initTabs(); initMT5Form(); loadNewsData();
+            initMarketDropdown(); initCharts(); connectDeriv(); initTabs(); initMT5Form(); loadNewsData(); updateMatchesBadge();
             document.getElementById('floatingAnalyseBtn')?.addEventListener('click',resetAnalysis);
             document.getElementById('manualAnalysisBtn')?.addEventListener('click',()=>{ if(priceData.length && digitsHistory.length>=30) analyzeSignals(priceData[priceData.length-1], digitsHistory[digitsHistory.length-1]); else speak("Not enough data yet."); });
-            document.querySelectorAll('.trade-type-btn').forEach(btn=>{ btn.addEventListener('click',(e)=>{ let type=btn.dataset.type; if(type==='matches_differs' && currentUserRole==='restricted') { checkMatchesAccess(()=>{}); return; } document.querySelectorAll('.trade-type-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentTradeType=type; canAnalyze=true; speak(`Switched to ${type.replace('_',' ')} analysis.`); }); });
+            document.querySelectorAll('.trade-type-btn').forEach(btn=>{ btn.addEventListener('click',(e)=>{ let type=btn.dataset.type; if(type==='matches_differs' && currentUserRole==='restricted' && !matchesAccessGranted) { showSessionCodeModal(()=>{}); return; } document.querySelectorAll('.trade-type-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentTradeType=type; canAnalyze=true; speak(`Switched to ${type.replace('_',' ')} analysis.`); }); });
             document.getElementById('voiceToggleBtn')?.addEventListener('click',()=>{ voiceEnabled=!voiceEnabled; document.getElementById('voiceToggleBtn').innerHTML=voiceEnabled?'<i class="fas fa-volume-up"></i>':'<i class="fas fa-volume-mute"></i>'; if(voiceEnabled) speak("Voice alerts enabled."); });
             document.getElementById('refreshDataBtn')?.addEventListener('click',()=>getTickHistory(currentMarket));
             document.getElementById('logoutBtn')?.addEventListener('click', logoutAndClear);
