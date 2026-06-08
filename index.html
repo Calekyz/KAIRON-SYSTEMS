@@ -249,7 +249,7 @@
                     <button id="refreshDataBtn" class="px-3 py-1 bg-purple-600 rounded-lg text-xs hover:bg-purple-700 transition"><i class="fas fa-sync-alt mr-1"></i>Refresh</button>
                 </div>
                 
-                <div class="mb-4"><h3 class="text-xs md:text-sm font-semibold text-gray-400 mb-2">Select Trading Type</h3><div class="grid grid-cols-4 gap-1 md:gap-2"><button class="trade-type-btn px-2 md:px-3 py-1.5 md:py-2 rounded-lg bg-gray-800/50 text-[10px] md:text-sm" data-type="over_under"><i class="fas fa-arrow-up text-green-400 mr-1"></i>Over/Under</button><button class="trade-type-btn px-2 md:px-3 py-1.5 md:py-2 rounded-lg bg-gray-800/50 text-[10px] md:text-sm" data-type="even_odd"><i class="fas fa-circle text-blue-400 mr-1"></i>Even/Odd</button><button class="trade-type-btn px-2 md:px-3 py-1.5 md:py-2 rounded-lg bg-gray-800/50 text-[10px] md:text-sm" data-type="matches_differs"><i class="fas fa-equals text-purple-400 mr-1"></i>Matches/Differs</button><button class="trade-type-btn px-2 md:px-3 py-1.5 md:py-2 rounded-lg bg-gray-800/50 text-[10px] md:text-sm active" data-type="rise_fall"><i class="fas fa-chart-line text-yellow-400 mr-1"></i>Rise/Fall</button></div></div>
+                <div class="mb-4"><h3 class="text-xs md:text-sm font-semibold text-gray-400 mb-2">Select Trading Type</h3><div class="grid grid-cols-4 gap-1 md:gap-2"><button class="trade-type-btn px-2 md:px-3 py-1.5 md:py-2 rounded-lg bg-gray-800/50 text-[10px] md:text-sm" data-type="over_under"><i class="fas fa-arrow-up text-green-400 mr-1"></i>Over/Under</button><button class="trade-type-btn px-2 md:px-3 py-1.5 md:py-2 rounded-lg bg-gray-800/50 text-[10px] md:text-sm" data-type="even_odd"><i class="fas fa-circle text-blue-400 mr-1"></i>Even/Odd</button><button class="trade-type-btn px-2 md:px-3 py-1.5 md:py-2 rounded-lg bg-gray-800/50 text-[10px] md:text-sm" data-type="matches_differs"><i class="fas fa-equals text-purple-400 mr-1"></i>Matches/Differs</button><button class="trade-type-btn px-2 md:px-3 py-1.5 md:py-2 rounded-lg bg-gray-800/50 text-[10px] md:text-sm" data-type="rise_fall"><i class="fas fa-chart-line text-yellow-400 mr-1"></i>Rise/Fall</button></div></div>
                 
                 <div class="mb-4 glass-card rounded-xl p-3 md:p-4"><div class="flex justify-between items-center mb-3"><h3 class="text-sm md:text-base font-semibold"><i class="fas fa-chart-simple mr-2 text-blue-400"></i>LDP - Last 20 Digits</h3><span class="text-xs text-gray-400">Most Recent →</span></div><div id="ldpGrid" class="ldp-grid"></div><div class="mt-3 text-center"><p class="text-xs text-gray-400">Current Last Digit: <span id="currentLastDigit" class="text-xl font-bold text-yellow-400">-</span></p></div></div>
                 
@@ -261,7 +261,7 @@
                         <div class="glass-card rounded-xl md:rounded-2xl p-3 md:p-4"><h3 class="text-sm md:text-base font-semibold mb-2 md:mb-3"><i class="fas fa-chart-line mr-2 text-blue-400"></i>Real-time Price Action - <span id="currentMarketDisplay">Volatility 100 Index</span></h3><canvas id="priceChart" height="200" class="w-full"></canvas><div class="grid grid-cols-4 gap-1 md:gap-2 mt-3 text-center text-[10px] md:text-xs"><div><span class="text-gray-400">Last</span><br><span id="lastPrice" class="font-bold text-sm md:text-base">0.00</span></div><div><span class="text-gray-400">High</span><br><span id="highPrice" class="font-bold text-green-400">0.00</span></div><div><span class="text-gray-400">Low</span><br><span id="lowPrice" class="font-bold text-red-400">0.00</span></div><div><span class="text-gray-400">Change</span><br><span id="priceChange" class="font-bold">0%</span></div></div></div>
                     </div>
                     <div class="space-y-3 md:space-y-4">
-                        <div class="glass-card rounded-xl md:rounded-2xl p-3 md:p-4"><h3 class="text-sm md:text-base font-semibold mb-2 md:mb-3"><i class="fas fa-bullhorn mr-2 text-yellow-400"></i>Live Signals</h3><div id="currentSignal" class="mb-3 p-3 rounded-lg text-center bg-gray-800/50 min-h-[120px]"><div class="data-spinner"></div><p class="text-xs text-gray-400 mt-2">Awaiting market data...</p></div><div class="mb-3"><div class="flex justify-between text-xs mb-1"><span>Signal Confidence</span><span id="confidencePercent">0%</span></div><div class="w-full bg-gray-700 rounded-full h-2"><div id="confidenceBar" class="confidence-bar h-2 rounded-full" style="width: 0%"></div></div></div><div class="space-y-1 md:space-y-2"><h4 class="text-[10px] md:text-xs font-semibold text-gray-400">Technical Indicators</h4><div id="indicators" class="space-y-1 text-[10px] md:text-xs"></div></div><button id="manualAnalysisBtn" class="mt-3 w-full py-1.5 md:py-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg text-xs md:text-sm font-semibold hover:shadow-lg transition"><i class="fas fa-chart-line mr-1"></i>Run Analysis</button></div>
+                        <div class="glass-card rounded-xl md:rounded-2xl p-3 md:p-4"><h3 class="text-sm md:text-base font-semibold mb-2 md:mb-3"><i class="fas fa-bullhorn mr-2 text-yellow-400"></i>Live Signals</h3><div id="currentSignal" class="mb-3 p-3 rounded-lg text-center bg-gray-800/50 min-h-[120px]"><div class="data-spinner"></div><p class="text-xs text-gray-400 mt-2">Press ANALYSE MARKET to get signal</p></div><div class="mb-3"><div class="flex justify-between text-xs mb-1"><span>Signal Confidence</span><span id="confidencePercent">0%</span></div><div class="w-full bg-gray-700 rounded-full h-2"><div id="confidenceBar" class="confidence-bar h-2 rounded-full" style="width: 0%"></div></div></div><div class="space-y-1 md:space-y-2"><h4 class="text-[10px] md:text-xs font-semibold text-gray-400">Technical Indicators</h4><div id="indicators" class="space-y-1 text-[10px] md:text-xs"></div></div><button id="manualAnalysisBtn" class="mt-3 w-full py-1.5 md:py-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg text-xs md:text-sm font-semibold hover:shadow-lg transition"><i class="fas fa-chart-line mr-1"></i>Run Analysis</button></div>
                         <div class="glass-card rounded-xl md:rounded-2xl p-3 md:p-4"><h3 class="text-sm md:text-base font-semibold mb-2 md:mb-3"><i class="fas fa-history mr-2 text-green-400"></i>Signal History</h3><div id="signalHistory" class="space-y-1 max-h-40 md:max-h-48 overflow-y-auto"><p class="text-center text-gray-500 text-xs py-4">No signals yet</p></div></div>
                     </div>
                 </div>
@@ -337,7 +337,7 @@
         // ======================= APP CORE =======================
         const MARKET_NAMES = { 'R_10': 'Volatility 10 Index','R_25':'Volatility 25 Index','R_50':'Volatility 50 Index','R_75':'Volatility 75 Index','R_100':'Volatility 100 Index','1HZ10V':'Volatility 10 (1s)','1HZ25V':'Volatility 25 (1s)','1HZ50V':'Volatility 50 (1s)','1HZ75V':'Volatility 75 (1s)','1HZ100V':'Volatility 100 (1s)' };
         const ALL_MARKETS = Object.keys(MARKET_NAMES);
-        let ws = null, currentMarket = 'R_100', currentTradeType = 'matches_differs', digitsHistory = [], priceData = [], signalHistory = [], voiceEnabled = true, lastVoiceTime = 0, canAnalyze = true, priceChart = null, digitsChart = null, currentSubscriptionId = null;
+        let ws = null, currentMarket = 'R_100', currentTradeType = 'matches_differs', digitsHistory = [], priceData = [], signalHistory = [], voiceEnabled = true, lastVoiceTime = 0, priceChart = null, digitsChart = null, currentSubscriptionId = null;
         const MARKET_DATA = {};
         ALL_MARKETS.forEach(m => { MARKET_DATA[m] = { digitsHistory: [], priceData: [] }; });
 
@@ -349,7 +349,7 @@
         function calculateEMA(prices, period) { if(prices.length<period) return prices[prices.length-1]; let multiplier=2/(period+1), ema=prices[0]; for(let i=1;i<prices.length;i++) ema=(prices[i]-ema)*multiplier+ema; return ema; }
         function calculateRSI(prices) { let gains=0,losses=0; for(let i=1;i<Math.min(prices.length,15);i++){ let ch=prices[i]-prices[i-1]; if(ch>=0) gains+=ch; else losses-=ch; } let avgGain=gains/14, avgLoss=losses/14, rs=avgLoss===0?100:avgGain/avgLoss; return 100-(100/(1+rs)); }
         
-        function analyzeEvenOdd(digit) {
+        function analyzeEvenOdd() {
             if(digitsHistory.length<20) return null;
             let evenCount=digitsHistory.filter(d=>d%2===0).length, oddCount=digitsHistory.length-evenCount;
             let evenPct=(evenCount/digitsHistory.length)*100, oddPct=(oddCount/digitsHistory.length)*100;
@@ -358,15 +358,13 @@
             return null;
         }
         
-        // FIXED: Immediate MATCHES detection for admin
-        function analyzeMatchesDiffers(digit) {
+        function analyzeMatchesDiffers() {
             if(digitsHistory.length<15) return null;
             
             let matches = 0;
             let differs = 0;
             const lastDigit = digitsHistory[digitsHistory.length - 1];
             
-            // Analyze recent pattern (last 15-20 ticks)
             const startIdx = Math.max(0, digitsHistory.length - 20);
             for(let i = startIdx + 1; i < digitsHistory.length; i++) { 
                 if(digitsHistory[i] === digitsHistory[i-1]) {
@@ -381,8 +379,6 @@
             const differsPct = (differs / total) * 100;
             
             if (isAdminUser()) {
-                // ADMIN: MATCHES signals - predicts SAME digit repeats
-                // Lower threshold to 50% for more immediate signals
                 if(matchesPct >= 50 && matches > 0) {
                     return { 
                         signal: "MATCHES", 
@@ -391,7 +387,6 @@
                         lastDigit: lastDigit
                     };
                 }
-                // If no strong matches pattern, still sometimes predict based on recent streak
                 if(digitsHistory.length >= 3 && digitsHistory[digitsHistory.length-1] === digitsHistory[digitsHistory.length-2]) {
                     return {
                         signal: "MATCHES",
@@ -402,7 +397,6 @@
                 }
                 return null;
             } else {
-                // Non-admin: DIFFERS signals
                 if(differsPct >= 50) {
                     return { 
                         signal: "DIFFERS", 
@@ -415,7 +409,7 @@
             }
         }
         
-        function analyzeRiseFall(price) {
+        function analyzeRiseFall() {
             if(priceData.length<20) return null;
             let prices=priceData.slice(-20), gains=0,losses=0;
             for(let i=1;i<prices.length;i++){ let ch=prices[i]-prices[i-1]; if(ch>=0) gains+=ch; else losses-=ch; }
@@ -427,14 +421,16 @@
             if(signal && confidence>65) return { signal, confidence:Math.round(confidence), reasons:[`RSI: ${rsi.toFixed(1)}`] };
             return null;
         }
-        function analyzeOverUnder(digit) {
+        
+        function analyzeOverUnder() {
             if(digitsHistory.length<20) return null;
             let overThresh=[2,3,4,5,6,7,8,9], bestOver=null,bestOverPct=0;
             for(let t of overThresh){ let overCount=digitsHistory.filter(d=>d>t).length, pct=(overCount/digitsHistory.length)*100; if(pct>bestOverPct && pct>=55){ bestOverPct=pct; bestOver=t; } }
             let underThresh=[1,2,3,4,5,6,7,8], bestUnder=null,bestUnderPct=0;
             for(let t of underThresh){ let underCount=digitsHistory.filter(d=>d<t).length, pct=(underCount/digitsHistory.length)*100; if(pct>bestUnderPct && pct>=55){ bestUnderPct=pct; bestUnder=t; } }
-            if(bestOver!==null && bestOverPct>=60){ let prediction=digit>bestOver?"OVER":"UNDER"; return { signal:`${prediction} ${bestOver}`, confidence:bestOverPct, type:"over" }; }
-            if(bestUnder!==null && bestUnderPct>=60){ let prediction=digit<bestUnder?"UNDER":"OVER"; return { signal:`${prediction} ${bestUnder}`, confidence:bestUnderPct, type:"under" }; }
+            const lastDigit = digitsHistory[digitsHistory.length-1];
+            if(bestOver!==null && bestOverPct>=60){ let prediction=lastDigit>bestOver?"OVER":"UNDER"; return { signal:`${prediction} ${bestOver}`, confidence:bestOverPct, type:"over" }; }
+            if(bestUnder!==null && bestUnderPct>=60){ let prediction=lastDigit<bestUnder?"UNDER":"OVER"; return { signal:`${prediction} ${bestUnder}`, confidence:bestUnderPct, type:"under" }; }
             return null;
         }
         
@@ -448,9 +444,9 @@
                 let largeHtml = '';
                 if(currentTradeType === 'matches_differs' && extra?.digit!==undefined){
                     if(signal === 'MATCHES') {
-                        largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-purple-900 to-purple-700 rounded-2xl p-3 border-2 border-purple-400 shadow-2xl"><p class="text-xs text-purple-300 font-semibold tracking-wider">🎯 MATCH PREDICTION</p><div class="text-8xl md:text-9xl font-black text-white drop-shadow-lg my-2">${extra.digit}</div><p class="text-sm text-purple-200">NEXT TICK WILL MATCH: <span class="text-2xl font-bold">${extra.digit}</span></p><p class="text-[10px] text-gray-300 mt-1">Same digit will repeat</p></div></div>`;
+                        largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-purple-900 to-purple-700 rounded-2xl p-3 border-2 border-purple-400 shadow-2xl"><p class="text-xs text-purple-300 font-semibold tracking-wider">🎯 MATCH PREDICTION</p><div class="text-8xl md:text-9xl font-black text-white drop-shadow-lg my-2">${extra.digit}</div><p class="text-sm text-purple-200">NEXT TICK WILL MATCH: <span class="text-2xl font-bold">${extra.digit}</span></p><p class="text-[10px] text-gray-300 mt-1">Same digit will repeat - Place MATCH trade</p></div></div>`;
                     } else {
-                        largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-blue-900 to-blue-700 rounded-2xl p-3 border-2 border-blue-400 shadow-2xl"><p class="text-xs text-blue-300 font-semibold tracking-wider">🔄 DIFFERS PREDICTION</p><div class="text-6xl md:text-7xl font-black text-white drop-shadow-lg my-2">≠ ${extra.digit}</div><p class="text-sm text-blue-200">NEXT TICK WILL BE DIFFERENT FROM <span class="text-xl font-bold">${extra.digit}</span></p><p class="text-[10px] text-gray-300 mt-1">Digit will change</p></div></div>`;
+                        largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-blue-900 to-blue-700 rounded-2xl p-3 border-2 border-blue-400 shadow-2xl"><p class="text-xs text-blue-300 font-semibold tracking-wider">🔄 DIFFERS PREDICTION</p><div class="text-6xl md:text-7xl font-black text-white drop-shadow-lg my-2">≠ ${extra.digit}</div><p class="text-sm text-blue-200">NEXT TICK WILL BE DIFFERENT FROM <span class="text-xl font-bold">${extra.digit}</span></p><p class="text-[10px] text-gray-300 mt-1">Digit will change - Place DIFFERS trade</p></div></div>`;
                     }
                 } else if(currentTradeType === 'even_odd' && (signal === 'EVEN' || signal === 'ODD')){
                     largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-2 border-2 border-yellow-500 shadow-2xl"><p class="text-xs text-yellow-300 font-semibold tracking-wider">PREDICTION</p><div class="text-7xl md:text-8xl font-black text-white drop-shadow-lg">${signal}</div><p class="text-[10px] text-gray-400 mt-1">HIGH CONFIDENCE ${Math.round(confidence)}%</p></div></div>`;
@@ -466,25 +462,31 @@
             document.getElementById('confidencePercent').innerText=`${Math.round(confidence)}%`;
         }
         
-        function analyzeSignals(price, digit) {
-            if(!canAnalyze) return false;
-            
-            let result=null;
-            if(currentTradeType==='over_under') result=analyzeOverUnder(digit);
-            else if(currentTradeType==='even_odd') result=analyzeEvenOdd(digit);
-            else if(currentTradeType==='matches_differs') result=analyzeMatchesDiffers(digit);
-            else if(currentTradeType==='rise_fall') result=analyzeRiseFall(price);
-            
-            if(result && result.confidence>=50){
-                let extraData=null;
-                if(currentTradeType==='matches_differs' && result.lastDigit!==undefined) extraData={ digit:result.lastDigit, type:result.type };
-                generateSignal(result.signal, result.confidence, result.reasons || [], extraData);
-                canAnalyze = false;
-                // Reset after 2 seconds to allow new signals on next ticks
-                setTimeout(() => { canAnalyze = true; }, 2000);
-                return true;
+        // This function is called ONLY when user presses ANALYSE MARKET button
+        function runAnalysis() {
+            if(digitsHistory.length < 15) {
+                speak("Not enough data yet. Please wait for more ticks.");
+                document.getElementById('currentSignal').innerHTML = '<div class="text-yellow-400 text-center p-2"><i class="fas fa-clock"></i> Collecting market data... Please wait a moment.</div>';
+                return;
             }
-            return false;
+            
+            let result = null;
+            if(currentTradeType === 'over_under') result = analyzeOverUnder();
+            else if(currentTradeType === 'even_odd') result = analyzeEvenOdd();
+            else if(currentTradeType === 'matches_differs') result = analyzeMatchesDiffers();
+            else if(currentTradeType === 'rise_fall') result = analyzeRiseFall();
+            
+            if(result && result.confidence >= 50) {
+                let extraData = null;
+                if(currentTradeType === 'matches_differs' && result.lastDigit !== undefined) {
+                    extraData = { digit: result.lastDigit, type: result.type };
+                }
+                generateSignal(result.signal, result.confidence, result.reasons || [], extraData);
+                speak(`Signal generated. ${result.signal} with ${Math.round(result.confidence)} percent confidence.`);
+            } else {
+                document.getElementById('currentSignal').innerHTML = '<div class="text-gray-400 text-center p-2"><i class="fas fa-chart-line"></i> No clear signal at this moment. Try again in a few seconds.</div>';
+                speak("No clear signal detected at this moment.");
+            }
         }
         
         function updateUI() { 
@@ -511,26 +513,36 @@
             }
         }
         
-        function forceAnalysis() {
-            if(priceData.length && digitsHistory.length >= 15) {
-                canAnalyze = true;
-                analyzeSignals(priceData[priceData.length-1], digitsHistory[digitsHistory.length-1]);
-            } else {
-                speak("Not enough data yet. Waiting for more ticks...");
-                setTimeout(() => {
-                    if(priceData.length && digitsHistory.length >= 15) {
-                        analyzeSignals(priceData[priceData.length-1], digitsHistory[digitsHistory.length-1]);
-                    }
-                }, 3000);
+        // Only update UI and collect data from ticks - NO AUTO SIGNALS
+        function handleNewTick(tick){ 
+            let price=parseFloat(tick.quote); 
+            if(isNaN(price)) return; 
+            if(tick.subscription&&!currentSubscriptionId) currentSubscriptionId=tick.subscription.id; 
+            priceData.push(price); 
+            digitsHistory.push(getDigitFromPrice(price)); 
+            if(priceData.length>1000){ 
+                priceData=priceData.slice(-1000); 
+                digitsHistory=digitsHistory.slice(-1000); 
+            } 
+            MARKET_DATA[currentMarket]={priceData:[...priceData],digitsHistory:[...digitsHistory]}; 
+            updateUI(); 
+            if(priceChart){ 
+                priceChart.data.datasets[0].data=priceData.slice(-100); 
+                priceChart.update(); 
             }
+            // NO automatic signal generation here - user must press ANALYSE MARKET
         }
         
-        function handleNewTick(tick){ let price=parseFloat(tick.quote); if(isNaN(price)) return; if(tick.subscription&&!currentSubscriptionId) currentSubscriptionId=tick.subscription.id; priceData.push(price); digitsHistory.push(getDigitFromPrice(price)); if(priceData.length>1000){ priceData=priceData.slice(-1000); digitsHistory=digitsHistory.slice(-1000); } MARKET_DATA[currentMarket]={priceData:[...priceData],digitsHistory:[...digitsHistory]}; updateUI(); if(priceChart){ priceChart.data.datasets[0].data=priceData.slice(-100); priceChart.update(); } if(canAnalyze && digitsHistory.length>=15) analyzeSignals(price, digitsHistory[digitsHistory.length-1]); }
         function connectDeriv(){ if(ws) ws.close(); ws=new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089"); ws.onopen=()=>{ getTickHistory(currentMarket); subscribeToMarket(currentMarket); setInterval(()=>{ if(ws && ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({ping:1})); },30000); }; ws.onmessage=(e)=>{ let data=JSON.parse(e.data); if(data.pong) return; if(data.tick) handleNewTick(data.tick); if(data.history && data.history.prices) { let prices=data.history.prices.map(p=>parseFloat(p)); priceData=prices; digitsHistory=prices.map(p=>getDigitFromPrice(p)); updateUI(); if(priceChart){ priceChart.data.datasets[0].data=priceData.slice(-100); priceChart.update(); } } }; ws.onclose=()=>setTimeout(connectDeriv,5000); }
         function subscribeToMarket(sym){ if(ws?.readyState===WebSocket.OPEN){ if(currentSubscriptionId) ws.send(JSON.stringify({forget:currentSubscriptionId, req_id:Date.now()})); ws.send(JSON.stringify({ticks:sym,subscribe:1,req_id:Date.now()})); } }
         function getTickHistory(sym){ let cnt=parseInt(document.getElementById("tickSelector")?.value||"1000"); if(ws?.readyState===WebSocket.OPEN) ws.send(JSON.stringify({ticks_history:sym,adjust_start_time:1,count:cnt,end:"latest",style:"ticks",req_id:Date.now()})); }
-        function resetAnalysis(){ canAnalyze=true; document.getElementById('floatingAnalyseBtn').style.transform='scale(1.1)'; setTimeout(()=>document.getElementById('floatingAnalyseBtn').style.transform='',300); speak("KAIRON quantum analysis activated."); forceAnalysis(); }
-        function initMarketDropdown(){ let content=document.getElementById('marketDropdownContent'); if(content){ content.innerHTML=ALL_MARKETS.map(m=>`<div class="market-dropdown-item ${currentMarket===m?'active':''}" data-market="${m}"><i class="fas fa-chart-line mr-2"></i>${MARKET_NAMES[m]}</div>`).join(''); document.querySelectorAll('.market-dropdown-item').forEach(el=>el.addEventListener('click',()=>{ let m=el.dataset.market; currentMarket=m; document.getElementById('selectedMarketText').innerText=MARKET_NAMES[m]; if(MARKET_DATA[m]?.priceData){ priceData=[...MARKET_DATA[m].priceData]; digitsHistory=[...MARKET_DATA[m].digitsHistory]; updateUI(); priceChart.data.datasets[0].data=priceData.slice(-100); priceChart.update(); } else getTickHistory(m); subscribeToMarket(m); canAnalyze=true; })); }
+        function resetAnalysis(){ 
+            document.getElementById('floatingAnalyseBtn').style.transform='scale(1.1)'; 
+            setTimeout(()=>document.getElementById('floatingAnalyseBtn').style.transform='',300); 
+            speak("KAIRON quantum analysis activated.");
+            runAnalysis(); 
+        }
+        function initMarketDropdown(){ let content=document.getElementById('marketDropdownContent'); if(content){ content.innerHTML=ALL_MARKETS.map(m=>`<div class="market-dropdown-item ${currentMarket===m?'active':''}" data-market="${m}"><i class="fas fa-chart-line mr-2"></i>${MARKET_NAMES[m]}</div>`).join(''); document.querySelectorAll('.market-dropdown-item').forEach(el=>el.addEventListener('click',()=>{ let m=el.dataset.market; currentMarket=m; document.getElementById('selectedMarketText').innerText=MARKET_NAMES[m]; if(MARKET_DATA[m]?.priceData){ priceData=[...MARKET_DATA[m].priceData]; digitsHistory=[...MARKET_DATA[m].digitsHistory]; updateUI(); priceChart.data.datasets[0].data=priceData.slice(-100); priceChart.update(); } else getTickHistory(m); subscribeToMarket(m); })); }
             document.getElementById('marketDropdownBtn')?.addEventListener('click',(e)=>{ e.stopPropagation(); content.classList.toggle('show'); });
             document.addEventListener('click',()=>content?.classList.remove('show'));
         }
@@ -584,7 +596,6 @@
         }
         
         function startTradingApp(){
-            // Set default to matches_differs for admin
             if(isAdminUser()) {
                 currentTradeType = 'matches_differs';
                 document.querySelectorAll('.trade-type-btn').forEach(btn => {
@@ -594,14 +605,12 @@
             }
             initMarketDropdown(); initCharts(); connectDeriv(); initTabs(); initMT5Form(); loadNewsData(); updateUI();
             document.getElementById('floatingAnalyseBtn')?.addEventListener('click',resetAnalysis);
-            document.getElementById('manualAnalysisBtn')?.addEventListener('click',()=>{ forceAnalysis(); });
-            document.querySelectorAll('.trade-type-btn').forEach(btn=>{ btn.addEventListener('click',(e)=>{ let type=btn.dataset.type; document.querySelectorAll('.trade-type-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentTradeType=type; canAnalyze=true; speak(`Switched to ${type.replace('_',' ')} analysis.`); if(type === 'matches_differs') forceAnalysis(); }); });
+            document.getElementById('manualAnalysisBtn')?.addEventListener('click',()=>{ runAnalysis(); });
+            document.querySelectorAll('.trade-type-btn').forEach(btn=>{ btn.addEventListener('click',(e)=>{ let type=btn.dataset.type; document.querySelectorAll('.trade-type-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentTradeType=type; speak(`Switched to ${type.replace('_',' ')} analysis.`); }); });
             document.getElementById('voiceToggleBtn')?.addEventListener('click',()=>{ voiceEnabled=!voiceEnabled; document.getElementById('voiceToggleBtn').innerHTML=voiceEnabled?'<i class="fas fa-volume-up"></i>':'<i class="fas fa-volume-mute"></i>'; if(voiceEnabled) speak("Voice alerts enabled."); });
             document.getElementById('refreshDataBtn')?.addEventListener('click',()=>getTickHistory(currentMarket));
             document.getElementById('logoutBtn')?.addEventListener('click', logoutAndClear);
-            speak("KAIRON systems operational. Press ANALYSE MARKET for immediate signal.");
-            // Auto-run analysis after data loads
-            setTimeout(() => { if(digitsHistory.length >= 15) forceAnalysis(); }, 2000);
+            speak("KAIRON systems operational. Press ANALYSE MARKET to get a trading signal.");
         }
         window.addEventListener("beforeunload",()=>{ if(ws) ws.close(); });
     </script>
