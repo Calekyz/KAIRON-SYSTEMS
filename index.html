@@ -349,17 +349,57 @@
         function calculateEMA(prices, period) { if(prices.length<period) return prices[prices.length-1]; let multiplier=2/(period+1), ema=prices[0]; for(let i=1;i<prices.length;i++) ema=(prices[i]-ema)*multiplier+ema; return ema; }
         function calculateRSI(prices) { let gains=0,losses=0; for(let i=1;i<Math.min(prices.length,15);i++){ let ch=prices[i]-prices[i-1]; if(ch>=0) gains+=ch; else losses-=ch; } let avgGain=gains/14, avgLoss=losses/14, rs=avgLoss===0?100:avgGain/avgLoss; return 100-(100/(1+rs)); }
         
+        // ======================= UPDATED EVEN/ODD STRATEGY =======================
+        // Strategy uses GB (Green Bar = most appearing digit), 2nd most appearing digit, and RB (Red Bar = least appearing digit)
         function analyzeEvenOdd() {
-            if(digitsHistory.length<20) return null;
-            let evenCount=digitsHistory.filter(d=>d%2===0).length, oddCount=digitsHistory.length-evenCount;
-            let evenPct=(evenCount/digitsHistory.length)*100, oddPct=(oddCount/digitsHistory.length)*100;
-            if(evenPct>=60) return { signal:"EVEN", confidence:evenPct, type:"even" };
-            if(oddPct>=60) return { signal:"ODD", confidence:oddPct, type:"odd" };
+            if(digitsHistory.length < 30) return null;
+            
+            // Count frequency of each digit (0-9)
+            let freq = Array(10).fill(0);
+            digitsHistory.forEach(d => { if(d >= 0 && d <= 9) freq[d]++; });
+            
+            // Find GB (most appearing digit), 2nd most appearing, and RB (least appearing)
+            let sorted = [...Array(10).keys()].sort((a,b) => freq[b] - freq[a]);
+            let gb = sorted[0];           // Green Bar - most frequent
+            let secondMost = sorted[1];    // Second most frequent
+            let rb = sorted[9];             // Red Bar - least frequent (or last)
+            
+            // STRATEGY 1: Check if GB, 2nd most, and another digit are all odd or all even
+            // For this strategy, we use GB, 2nd most, and RB as the three indicators
+            let digitsToCheck = [gb, secondMost, rb];
+            let allOdd = digitsToCheck.every(d => d % 2 === 1);
+            let allEven = digitsToCheck.every(d => d % 2 === 0);
+            
+            if (allOdd) {
+                let confidence = Math.min(95, 70 + (freq[gb] / digitsHistory.length * 20));
+                return { signal: "ODD", confidence: Math.round(confidence), type: "odd", gb: gb, second: secondMost, rb: rb };
+            }
+            
+            if (allEven) {
+                let confidence = Math.min(95, 70 + (freq[gb] / digitsHistory.length * 20));
+                return { signal: "EVEN", confidence: Math.round(confidence), type: "even", gb: gb, second: secondMost, rb: rb };
+            }
+            
+            // STRATEGY 2: Check if GB and 2nd most are on the same parity side
+            let gbOdd = gb % 2 === 1;
+            let secondOdd = secondMost % 2 === 1;
+            
+            if (gbOdd && secondOdd) {
+                let confidence = Math.min(90, 65 + (freq[gb] / digitsHistory.length * 15));
+                return { signal: "ODD", confidence: Math.round(confidence), type: "odd", gb: gb, second: secondMost, rb: rb };
+            }
+            
+            if (!gbOdd && !secondOdd) {
+                let confidence = Math.min(90, 65 + (freq[gb] / digitsHistory.length * 15));
+                return { signal: "EVEN", confidence: Math.round(confidence), type: "even", gb: gb, second: secondMost, rb: rb };
+            }
+            
             return null;
         }
         
+        // ======================= ORIGINAL MATCHES/DIFFERS (unchanged) =======================
         function analyzeMatchesDiffers() {
-            if(digitsHistory.length<15) return null;
+            if(digitsHistory.length < 15) return null;
             
             let matches = 0;
             let differs = 0;
@@ -409,8 +449,9 @@
             }
         }
         
+        // ======================= ORIGINAL RISE/FALL (unchanged) =======================
         function analyzeRiseFall() {
-            if(priceData.length<20) return null;
+            if(priceData.length < 20) return null;
             let prices=priceData.slice(-20), gains=0,losses=0;
             for(let i=1;i<prices.length;i++){ let ch=prices[i]-prices[i-1]; if(ch>=0) gains+=ch; else losses-=ch; }
             let avgGain=gains/14, avgLoss=losses/14, rs=avgLoss===0?100:avgGain/avgLoss, rsi=100-(100/(1+rs));
@@ -422,8 +463,9 @@
             return null;
         }
         
+        // ======================= ORIGINAL OVER/UNDER (unchanged) =======================
         function analyzeOverUnder() {
-            if(digitsHistory.length<20) return null;
+            if(digitsHistory.length < 20) return null;
             let overThresh=[2,3,4,5,6,7,8,9], bestOver=null,bestOverPct=0;
             for(let t of overThresh){ let overCount=digitsHistory.filter(d=>d>t).length, pct=(overCount/digitsHistory.length)*100; if(pct>bestOverPct && pct>=55){ bestOverPct=pct; bestOver=t; } }
             let underThresh=[1,2,3,4,5,6,7,8], bestUnder=null,bestUnderPct=0;
@@ -442,15 +484,28 @@
                 const colorClass = isBullish ? 'text-green-400' : 'text-red-400';
                 const icon = isBullish ? 'fa-arrow-up' : 'fa-arrow-down';
                 let largeHtml = '';
-                if(currentTradeType === 'matches_differs' && extra?.digit!==undefined){
+                
+                if(currentTradeType === 'matches_differs' && extra?.digit !== undefined) {
                     if(signal === 'MATCHES') {
                         largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-purple-900 to-purple-700 rounded-2xl p-3 border-2 border-purple-400 shadow-2xl"><p class="text-xs text-purple-300 font-semibold tracking-wider">🎯 MATCH PREDICTION</p><div class="text-8xl md:text-9xl font-black text-white drop-shadow-lg my-2">${extra.digit}</div><p class="text-sm text-purple-200">NEXT TICK WILL MATCH: <span class="text-2xl font-bold">${extra.digit}</span></p><p class="text-[10px] text-gray-300 mt-1">Same digit will repeat - Place MATCH trade</p></div></div>`;
                     } else {
                         largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-blue-900 to-blue-700 rounded-2xl p-3 border-2 border-blue-400 shadow-2xl"><p class="text-xs text-blue-300 font-semibold tracking-wider">🔄 DIFFERS PREDICTION</p><div class="text-6xl md:text-7xl font-black text-white drop-shadow-lg my-2">≠ ${extra.digit}</div><p class="text-sm text-blue-200">NEXT TICK WILL BE DIFFERENT FROM <span class="text-xl font-bold">${extra.digit}</span></p><p class="text-[10px] text-gray-300 mt-1">Digit will change - Place DIFFERS trade</p></div></div>`;
                     }
-                } else if(currentTradeType === 'even_odd' && (signal === 'EVEN' || signal === 'ODD')){
-                    largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-2 border-2 border-yellow-500 shadow-2xl"><p class="text-xs text-yellow-300 font-semibold tracking-wider">PREDICTION</p><div class="text-7xl md:text-8xl font-black text-white drop-shadow-lg">${signal}</div><p class="text-[10px] text-gray-400 mt-1">HIGH CONFIDENCE ${Math.round(confidence)}%</p></div></div>`;
+                } 
+                else if(currentTradeType === 'even_odd' && (signal === 'EVEN' || signal === 'ODD')) {
+                    // LARGE DISPLAY FOR EVEN/ODD SIGNALS
+                    const bgGradient = signal === 'EVEN' ? 'from-green-900 to-green-700 border-green-400' : 'from-orange-900 to-orange-700 border-orange-400';
+                    const digitColor = signal === 'EVEN' ? 'text-green-300' : 'text-orange-300';
+                    largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br ${bgGradient} rounded-2xl p-4 border-2 shadow-2xl"><p class="text-sm font-semibold tracking-wider mb-2 ${digitColor}">🎲 KAIRON QUANTUM ANALYSIS</p><div class="text-8xl md:text-9xl font-black text-white drop-shadow-lg my-3">${signal}</div><p class="text-base font-bold mt-2">${signal.toUpperCase()} SIGNAL CONFIRMED</p><div class="flex justify-center gap-4 mt-3 text-xs"><span class="px-2 py-1 bg-black/30 rounded">Confidence: ${Math.round(confidence)}%</span></div></div></div>`;
                 }
+                else if(currentTradeType === 'over_under' && signal) {
+                    largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br from-cyan-900 to-cyan-700 rounded-2xl p-3 border-2 border-cyan-400 shadow-2xl"><p class="text-xs text-cyan-300 font-semibold tracking-wider">📊 THRESHOLD PREDICTION</p><div class="text-5xl md:text-6xl font-black text-white drop-shadow-lg my-2">${signal}</div><p class="text-[10px] text-gray-300 mt-1">Based on ${digitsHistory.length} tick analysis</p></div></div>`;
+                }
+                else if(currentTradeType === 'rise_fall' && signal) {
+                    const bgRiseFall = signal === 'RISE' ? 'from-emerald-900 to-emerald-700 border-emerald-400' : 'from-rose-900 to-rose-700 border-rose-400';
+                    largeHtml = `<div class="large-digit-box mt-1 mb-2 w-full"><div class="text-center bg-gradient-to-br ${bgRiseFall} rounded-2xl p-3 border-2 shadow-2xl"><p class="text-xs font-semibold tracking-wider">📈 PRICE ACTION SIGNAL</p><div class="text-5xl md:text-6xl font-black text-white drop-shadow-lg my-2">${signal}</div><p class="text-[10px] text-gray-300 mt-1">RSI Momentum Analysis</p></div></div>`;
+                }
+                
                 div.innerHTML = `${largeHtml}<i class="fas ${icon} text-3xl ${colorClass} mb-2 animate-pulse"></i><p class="text-2xl font-bold ${colorClass}">${signal} SIGNAL!</p><p class="text-sm">Confidence: ${Math.round(confidence)}%</p><div class="text-xs text-gray-400 mt-2">${reasons?.length? reasons.map(r=>`<span class="inline-block px-2 py-1 bg-gray-800 rounded mr-1">${r}</span>`).join('') : '<span class="px-2 py-1 bg-gray-800 rounded">Quantum pattern detected</span>'}</div><p class="text-xs text-gray-500 mt-2">${MARKET_NAMES[currentMarket]} | ${new Date().toLocaleTimeString()}</p>`;
             }
             if(voiceEnabled && Date.now()-lastVoiceTime>3000){ speak(`KAIRON signal: ${signal} with ${Math.round(confidence)} percent confidence.`); playAlertSound(); lastVoiceTime=Date.now(); }
@@ -462,11 +517,10 @@
             document.getElementById('confidencePercent').innerText=`${Math.round(confidence)}%`;
         }
         
-        // This function is called ONLY when user presses ANALYSE MARKET button
         function runAnalysis() {
-            if(digitsHistory.length < 15) {
+            if(digitsHistory.length < 30) {
                 speak("Not enough data yet. Please wait for more ticks.");
-                document.getElementById('currentSignal').innerHTML = '<div class="text-yellow-400 text-center p-2"><i class="fas fa-clock"></i> Collecting market data... Please wait a moment.</div>';
+                document.getElementById('currentSignal').innerHTML = '<div class="text-yellow-400 text-center p-2"><i class="fas fa-clock"></i> Collecting market data... Need at least 30 ticks.</div>';
                 return;
             }
             
@@ -513,7 +567,6 @@
             }
         }
         
-        // Only update UI and collect data from ticks - NO AUTO SIGNALS
         function handleNewTick(tick){ 
             let price=parseFloat(tick.quote); 
             if(isNaN(price)) return; 
@@ -530,7 +583,6 @@
                 priceChart.data.datasets[0].data=priceData.slice(-100); 
                 priceChart.update(); 
             }
-            // NO automatic signal generation here - user must press ANALYSE MARKET
         }
         
         function connectDeriv(){ if(ws) ws.close(); ws=new WebSocket("wss://ws.binaryws.com/websockets/v3?app_id=1089"); ws.onopen=()=>{ getTickHistory(currentMarket); subscribeToMarket(currentMarket); setInterval(()=>{ if(ws && ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({ping:1})); },30000); }; ws.onmessage=(e)=>{ let data=JSON.parse(e.data); if(data.pong) return; if(data.tick) handleNewTick(data.tick); if(data.history && data.history.prices) { let prices=data.history.prices.map(p=>parseFloat(p)); priceData=prices; digitsHistory=prices.map(p=>getDigitFromPrice(p)); updateUI(); if(priceChart){ priceChart.data.datasets[0].data=priceData.slice(-100); priceChart.update(); } } }; ws.onclose=()=>setTimeout(connectDeriv,5000); }
