@@ -277,17 +277,15 @@
         
         <div id="newsTab" class="tab-content hidden"><div class="container mx-auto px-4 pb-8"><div class="grid lg:grid-cols-2 gap-3 md:gap-4"><div class="glass-card rounded-xl md:rounded-2xl p-3 md:p-4"><h3 class="text-sm md:text-base font-semibold mb-2 md:mb-3"><i class="fas fa-rss mr-2 text-orange-400"></i>Latest Market News</h3><div id="newsFeed" class="space-y-3 max-h-[600px] overflow-y-auto"><div class="animate-pulse space-y-3"><div class="h-24 bg-gray-700 rounded"></div></div></div></div><div class="space-y-3 md:space-y-4"><div class="glass-card rounded-xl md:rounded-2xl p-3 md:p-4"><h3 class="text-sm md:text-base font-semibold mb-2 md:mb-3"><i class="fas fa-calendar-alt mr-2 text-blue-400"></i>Economic Calendar</h3><div id="economicCalendar" class="space-y-2 max-h-64 overflow-y-auto"></div></div><div class="glass-card rounded-xl md:rounded-2xl p-3 md:p-4"><h3 class="text-sm md:text-base font-semibold mb-2 md:mb-3"><i class="fas fa-chart-line mr-2 text-green-400"></i>Commodities & Stocks</h3><div id="commodities" class="space-y-2"></div></div></div></div></div></div>
 
-        <!-- Admin Tab (visible only to admin users) -->
+        <!-- Admin Tab (visible only to primary admin) -->
         <div id="adminTab" class="tab-content hidden">
             <div class="container mx-auto px-4 pb-8">
                 <div class="glass-card rounded-xl p-4 md:p-6">
                     <h2 class="text-xl font-bold mb-4"><i class="fas fa-users-cog mr-2 text-yellow-400"></i>User Management</h2>
                     <p class="text-xs text-gray-400 mb-4">Add or remove users who can access the platform.</p>
                     
-                    <div class="add-user-form">
-                        <input type="email" id="newUserEmail" placeholder="Email address" class="flex-1 min-w-[140px]">
-                        <input type="text" id="newUserPassword" placeholder="Password" class="flex-1 min-w-[140px]">
-                        <button id="addUserBtn">Add User</button>
+                    <div id="adminControls">
+                        <!-- Add user form and delete buttons will be shown only to primary admin -->
                     </div>
                     <div id="adminMsg" class="admin-msg"></div>
                     
@@ -305,6 +303,7 @@
     <script>
         // ======================= USER MANAGEMENT SYSTEM =======================
         const STORAGE_KEY = "kairon_users";
+        const PRIMARY_ADMIN = "caleborenge08@gmail.com";  // Only this email can manage users
 
         // Load users from localStorage, or seed with the four specified accounts
         function loadUsers() {
@@ -312,15 +311,15 @@
             if (users) {
                 try { 
                     const parsed = JSON.parse(users);
-                    // Ensure at least the main admin exists, otherwise re-seed
-                    if (parsed.some(u => u.email === "caleborenge08@gmail.com" && u.role === "admin")) {
+                    // Ensure at least the primary admin exists, otherwise re-seed
+                    if (parsed.some(u => u.email === PRIMARY_ADMIN && u.role === "admin")) {
                         return parsed;
                     }
                 } catch(e) {}
             }
             // Seed with the requested users
             const defaultUsers = [
-                { email: "caleborenge08@gmail.com", password: "admin123", role: "admin" },
+                { email: PRIMARY_ADMIN, password: "admin123", role: "admin" },
                 { email: "odaveallen71@gmail.com", password: "5waLe8RO##", role: "admin" },
                 { email: "kairontool@gmail.com", password: "kairon254", role: "user" },
                 { email: "caleborenge77@gmail.com", password: "user123", role: "user" }
@@ -362,8 +361,11 @@
             return { success: false, message: "Invalid email or password." };
         }
 
-        // ======================= ADMIN FUNCTIONS =======================
+        // ======================= ADMIN FUNCTIONS (restricted to PRIMARY_ADMIN) =======================
         function addUser(email, password, role = "user") {
+            if (currentUserEmail !== PRIMARY_ADMIN) {
+                return { success: false, message: "Only the primary admin can add users." };
+            }
             if (!email || !password) return { success: false, message: "Email and password required." };
             const users = loadUsers();
             if (users.find(u => u.email === email)) {
@@ -375,6 +377,9 @@
         }
 
         function deleteUser(email) {
+            if (currentUserEmail !== PRIMARY_ADMIN) {
+                return { success: false, message: "Only the primary admin can delete users." };
+            }
             const users = loadUsers();
             const target = users.find(u => u.email === email);
             if (!target) return { success: false, message: "User not found." };
@@ -665,7 +670,8 @@
                 { id: 'forex', label: '<i class="fas fa-robot mr-2"></i>Forex Bot' },
                 { id: 'news', label: '<i class="fas fa-newspaper mr-2"></i>Market News' }
             ];
-            if (isAdmin(currentUserEmail)) {
+            // Only the primary admin can see the Admin tab
+            if (currentUserEmail === PRIMARY_ADMIN) {
                 tabs.push({ id: 'admin', label: '<i class="fas fa-users-cog mr-2"></i>👑 Admin' });
             }
             tabs.forEach((tab, index) => {
@@ -694,7 +700,7 @@
                         }
                     });
                     if (tabId === 'news') loadNewsData();
-                    if (tabId === 'admin' && isAdmin(currentUserEmail)) renderUserList();
+                    if (tabId === 'admin' && currentUserEmail === PRIMARY_ADMIN) renderUserList();
                 });
             });
             Object.entries(contents).forEach(([id, el]) => {
@@ -709,16 +715,48 @@
             const listDiv = document.getElementById('userList');
             if (!listDiv) return;
             const users = loadUsers();
+            const isPrimary = (currentUserEmail === PRIMARY_ADMIN);
+            // Show add user form only if primary admin
+            const controlsDiv = document.getElementById('adminControls');
+            if (controlsDiv) {
+                if (isPrimary) {
+                    controlsDiv.innerHTML = `
+                        <div class="add-user-form">
+                            <input type="email" id="newUserEmail" placeholder="Email address" class="flex-1 min-w-[140px]">
+                            <input type="text" id="newUserPassword" placeholder="Password" class="flex-1 min-w-[140px]">
+                            <button id="addUserBtn">Add User</button>
+                        </div>
+                    `;
+                    // Attach event listener
+                    document.getElementById('addUserBtn')?.addEventListener('click', () => {
+                        const email = document.getElementById('newUserEmail').value.trim();
+                        const password = document.getElementById('newUserPassword').value.trim();
+                        const result = addUser(email, password, 'user');
+                        document.getElementById('adminMsg').innerText = result.message;
+                        if (result.success) {
+                            document.getElementById('newUserEmail').value = '';
+                            document.getElementById('newUserPassword').value = '';
+                            renderUserList(); // refresh list
+                        }
+                    });
+                } else {
+                    controlsDiv.innerHTML = `<p class="text-xs text-red-400">You do not have permission to manage users.</p>`;
+                }
+            }
+            
+            // Render user list with delete buttons only for primary admin
             listDiv.innerHTML = users.map(u => {
                 const isAdminUser = u.role === 'admin';
+                const canDelete = isPrimary && !isAdminUser;
                 return `
                     <div class="admin-user-item">
                         <span class="email">${u.email}</span>
                         <span class="role-badge ${isAdminUser ? 'admin' : ''}">${u.role}</span>
-                        ${!isAdminUser ? `<button class="delete-user-btn" data-email="${u.email}"><i class="fas fa-trash-alt"></i> Delete</button>` : ''}
+                        ${canDelete ? `<button class="delete-user-btn" data-email="${u.email}"><i class="fas fa-trash-alt"></i> Delete</button>` : ''}
                     </div>
                 `;
             }).join('');
+            // Attach delete handlers
             listDiv.querySelectorAll('.delete-user-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const email = btn.dataset.email;
@@ -763,17 +801,7 @@
         }
         
         function initAdminPanel() {
-            document.getElementById('addUserBtn')?.addEventListener('click', () => {
-                const email = document.getElementById('newUserEmail').value.trim();
-                const password = document.getElementById('newUserPassword').value.trim();
-                const result = addUser(email, password, 'user');
-                document.getElementById('adminMsg').innerText = result.message;
-                if (result.success) {
-                    document.getElementById('newUserEmail').value = '';
-                    document.getElementById('newUserPassword').value = '';
-                    renderUserList();
-                }
-            });
+            // This is now handled inside renderUserList()
         }
 
         function startTradingApp(){
@@ -798,7 +826,10 @@
             initMT5Form(); 
             loadNewsData(); 
             updateUI();
-            initAdminPanel();
+            // If primary admin, render user list now
+            if (currentUserEmail === PRIMARY_ADMIN) {
+                renderUserList();
+            }
             
             document.getElementById('floatingAnalyseBtn')?.addEventListener('click',resetAnalysis);
             document.getElementById('manualAnalysisBtn')?.addEventListener('click',()=>{ runAnalysis(); });
